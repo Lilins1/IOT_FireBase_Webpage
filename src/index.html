@@ -4,60 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IoT Data Monitor</title>
+  <!-- 引入外部 CSS 文件 -->
+  <link rel="stylesheet" href="style.css">
   <style>
     :root {
       --primary-color: #2c3e50;
       --secondary-color: #3498db;
     }
-
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       padding: 20px;
       background-color: #f5f6fa;
     }
-
     .container {
       max-width: 1200px;
       margin: 0 auto;
     }
-
-    .packet {
+    .data-display {
       background: white;
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 15px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      white-space: pre-wrap; /* 保持换行格式 */
+      font-family: Consolas, "Courier New", monospace;
     }
-
-    .packet-header {
-      border-bottom: 2px solid #eee;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
-    }
-
-    .sensor-data {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-    }
-
-    .data-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px;
-      background-color: #f8f9fa;
-      border-radius: 4px;
-    }
-
-    .label {
-      color: var(--primary-color);
-      font-weight: 600;
-    }
-
-    .value {
-      color: var(--secondary-color);
-    }
-
     .error {
       color: #e74c3c;
       padding: 15px;
@@ -69,8 +40,8 @@
 <body>
   <div class="container">
     <h1>IoT Sensor Dashboard</h1>
-    <div id="packetContainer">
-      <!-- 数据将动态加载 -->
+    <div id="packetContainer" class="data-display">
+      <!-- 文件内容将直接显示在这里 -->
     </div>
   </div>
   <script src="app.js"></script>
