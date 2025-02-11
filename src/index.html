@@ -16,6 +16,32 @@
       padding: 20px;
       background-color: #f5f6fa;
     }
+    .upload-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .success {
+      color: #2ecc71;
+      padding: 10px;
+      background: #d4edda;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    button {
+      padding: 8px 16px;
+      background: var(--secondary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+      
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -40,10 +66,27 @@
 <body>
   <div class="container">
     <h1>IoT Sensor Dashboard</h1>
+    <!-- 上传到 Google Cloud -->
+    <div class="upload-section">
+      <input type="file" id="googleFileInput" accept=".txt">
+      <button onclick="uploadFileToGoogleCloud()">上传到Google Cloud</button>
+      <div id="googleUploadStatus"></div>
+    </div>
+
+    <!-- 上传到 Firebase -->
+    <div class="upload-section">
+      <input type="file" id="firebaseFileInput" accept=".txt">
+      <button onclick="uploadFileToFirebase()">上传到Firebase</button>
+      <div id="firebaseUploadStatus"></div>
+    </div>
+
     <div id="packetContainer" class="data-display">
       <!-- 文件内容将直接显示在这里 -->
     </div>
   </div>
+
+  <!-- 引入外部 JavaScript 文件 -->
   <script src="app.js"></script>
+  <script src="Google_upload.js"></script>
 </body>
 </html>
