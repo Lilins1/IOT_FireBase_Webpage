@@ -1,91 +1,200 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IoT Data Monitor</title>
-  <!-- 引入外部 CSS 文件 -->
   <link rel="stylesheet" href="style.css">
   <style>
     :root {
       --primary-color: #2c3e50;
       --secondary-color: #3498db;
+      --background-color: #f5f6fa;
+      --card-bg: #ffffff;
+      --shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
       padding: 20px;
-      background-color: #f5f6fa;
     }
-    .upload-section {
-      margin-bottom: 20px;
-      padding: 15px;
-      background: white;
+    
+    .container {
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    h1 {
+      color: var(--primary-color);
+      text-align: center;
+    }
+    
+    .card {
+      width: 100%;
+      background: var(--card-bg);
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
     }
+    
+    button {
+      padding: 10px 20px;
+      background: var(--secondary-color);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    
+    button:hover {
+      background: #2980b9;
+    }
+    
+    .data-display {
+      text-align: left;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      background: var(--card-bg);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      width: 100%;
+    }
+    
     .success {
       color: #2ecc71;
       padding: 10px;
       background: #d4edda;
-      border-radius: 4px;
+      border-radius: 5px;
       margin-top: 10px;
     }
-    button {
-      padding: 8px 16px;
-      background: var(--secondary-color);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      opacity: 0.9;
-    }
-      
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .data-display {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      white-space: pre-wrap; /* 保持换行格式 */
-      font-family: Consolas, "Courier New", monospace;
-    }
+    
     .error {
       color: #e74c3c;
-      padding: 15px;
+      padding: 10px;
       background: #f8d7da;
-      border-radius: 4px;
+      border-radius: 5px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>IoT Sensor Dashboard</h1>
+    
     <!-- 上传到 Google Cloud -->
-    <div class="upload-section">
+    <div class="card">
       <input type="file" id="googleFileInput" accept=".txt">
-      <button onclick="uploadFileToGoogleCloud()">上传到Google Cloud</button>
+      <button onclick="uploadFileToGoogleCloud()">上传到 Google Cloud</button>
       <div id="googleUploadStatus"></div>
     </div>
 
-    <!-- 上传到 Firebase -->
-    <div class="upload-section">
-      <input type="file" id="firebaseFileInput" accept=".txt">
-      <button onclick="uploadFileToFirebase()">上传到Firebase</button>
-      <div id="firebaseUploadStatus"></div>
+    <!-- 本地文件读取 -->
+    <div class="card">
+      <input type="file" id="localFileInput" accept=".txt">
+      <button onclick="readLocalFile()">ReadFile</button>
+      <div id="localFileStatus"></div>
     </div>
 
+    <!-- 数据显示区 -->
     <div id="packetContainer" class="data-display">
-      <!-- 文件内容将直接显示在这里 -->
+      <!-- 文件内容将在这里显示 -->
+    </div>
+
+    <div class=".card">
+      <!-- 文件内容将在这里显示 -->
+       Real time data
+    </div>
+
+    <div id="packetContainer2" class="data-display">
+      <!-- 文件内容将在这里显示 -->
     </div>
   </div>
 
-  <!-- 引入外部 JavaScript 文件 -->
+
+  <script>
+    let selectedFile = null;
+
+    function readLocalFile() {
+      const fileInput = document.getElementById('localFileInput');
+      const statusDiv = document.getElementById('localFileStatus');
+      if (!fileInput.files[0]) {
+        statusDiv.innerHTML = '<div class="error">请先选择文件</div>';
+        return;
+      }
+      selectedFile = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('packetContainer').textContent = e.target.result;
+        statusDiv.innerHTML = `<div class="success">已加载文件: ${selectedFile.name}</div>`;
+      };
+      reader.onerror = function() {
+        statusDiv.innerHTML = '<div class="error">文件读取失败</div>';
+      };
+      reader.readAsText(selectedFile);
+    }
+
+    // function startAutoRead() {
+    //   setInterval(() => {
+    //     if (selectedFile) {
+    //       const reader = new FileReader();
+    //       reader.onload = function(e) {
+    //         document.getElementById('packetContainer').textContent = e.target.result;
+    //       };
+    //       reader.readAsText(selectedFile);
+    //     }
+    //   }, 3000);
+    // }
+
+    document.getElementById('localFileInput').addEventListener('change', () => {
+      readLocalFile();
+      // startAutoRead();
+    });
+  </script>
+
+  <script>
+    function fetchAndDisplayData() {
+      fetch('DataSet_real_time.TXT')
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.text();
+        })
+        .then(text => {
+          document.getElementById('packetContainer2').innerText = text;
+        })
+        .catch(error => {
+          console.error('Fetch Error:', error);
+          document.getElementById('packetContainer2').innerHTML = `
+            <div class="error">
+              Failed to load data: ${error.message}<br>
+              Please check that:<br>
+              1. The server is running from the correct directory.<br>
+              2. The file \"Data/DataSet_test.TXT\" exists in the correct location.<br>
+              3. File name case sensitivity.
+            </div>
+          `;
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchAndDisplayData();
+      setInterval(fetchAndDisplayData, 20000);
+    });
+  </script>
+
+
   <script src="app.js"></script>
   <script src="Google_upload.js"></script>
 </body>

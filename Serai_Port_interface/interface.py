@@ -28,7 +28,7 @@ class SerialDataLogger:
             if start == -1:
                 break
 
-            end = self.buffer.find('lx', start + 8)
+            end = self.buffer.find('mV', start + 8)
             if end == -1:
                 break
 
