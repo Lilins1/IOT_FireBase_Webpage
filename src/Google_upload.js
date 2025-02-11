@@ -2,7 +2,7 @@ const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 
 // 创建存储对象
-const storage = new Storage({ keyFilename: "data-segment-450509-s6-cab3f8e582fc.json" });
+const storage = new Storage({ keyFilename: "env/data-segment-450509-s6-cab3f8e582fc.json" });
 
 async function uploadFileToGoogleCloud() {
   // 获取今天的日期（格式：YYYY-MM-DD）
