@@ -67,3 +67,6 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# key
+.data-segment-450509-s6-cab3f8e582fc.json
