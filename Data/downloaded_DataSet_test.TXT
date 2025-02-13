@@ -65,5 +65,3 @@ Time 00:28:27 | dT 00:04 | RSSI  1.42mW | Humidity 27 % | Extrnl 1347 mV
 Packet #  279 | Node   1 | TX ID  ---   | Temp   71.7 F | Light   272 lx
 Time 00:28:31 | dT 00:04 | RSSI  0.60mW | Humidity 27 % | Extrnl 1358 mV
 
-Packet #  280 | Node   1 | TX ID  ---   | Temp   71.7 F | Light   282 lx
-Time 00:28:35 | dT 00:04 | RSSI  --- mW | Humidity 26 % | Extrnl 1355 mV

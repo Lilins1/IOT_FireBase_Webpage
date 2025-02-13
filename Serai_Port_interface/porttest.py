@@ -7,49 +7,29 @@ from queue import Queue
 
 class SerialDataLogger:
     def __init__(self):
-        # 配置串口参数
+        """配置串口参数"""
         self.ser = serial.Serial(
             port='COM8',
             baudrate=19200,
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
-            timeout= 0.1  # 更灵敏的超时设置
+            timeout=0.1  # 设置超时以确保流畅读取
         )
-        self.buffer = ''
         self.data_queue = Queue()
         self.running = True
         self.worker_thread = threading.Thread(target=self._save_worker)
-
-    def _process_buffer(self):
-        """处理缓冲区中的完整消息"""
-        while True:
-            start = self.buffer.find('#package')
-            if start == -1:
-                break
-
-            end = self.buffer.find('mV', start + 8)
-            if end == -1:
-                break
-
-            # 提取并发送有效消息
-            message = self.buffer[start+8:end].strip()
-            print(message)#consloe输出
-            self.data_queue.put(message)
-            
-            # 更新缓冲区
-            self.buffer = self.buffer[end+2:]
 
     def _save_worker(self):
         """后台存储工作线程"""
         messages = []
         while self.running or not self.data_queue.empty():
             try:
-                # 非阻塞获取数据
+                # 获取数据（非阻塞）
                 message = self.data_queue.get(timeout=0.5)
                 messages.append(message)
 
-                # 达到10条时保存
+                # 每10条数据保存一次
                 if len(messages) >= 10:
                     self._save_to_file(messages)
                     messages = []
@@ -61,7 +41,7 @@ class SerialDataLogger:
             self._save_to_file(messages)
 
     def _save_to_file(self, messages):
-        """实际存储操作"""
+        """存储数据到文件"""
         now = datetime.datetime.now()
         save_path = os.path.join(
             now.strftime('%Y%m%d'),
@@ -70,24 +50,24 @@ class SerialDataLogger:
         os.makedirs(save_path, exist_ok=True)
         
         filename = os.path.join(save_path, 'data.txt')
-        with open(filename, 'a', encoding='utf-8') as f:  # 改为追加模式
+        with open(filename, 'a', encoding='utf-8') as f:
             f.write('\n'.join(messages) + '\n')
         print(f"[{now}] 已保存{len(messages)}条数据到 {filename}")
 
     def run(self):
         """主运行循环"""
         self.worker_thread.start()
-        print("开始持续监听串口数据...")
-        
+        print("开始监听串口数据...")
+
         try:
             while self.running:
-                # 持续读取数据
                 if self.ser.in_waiting > 0:
+                    # 读取所有可用数据
                     data = self.ser.read(self.ser.in_waiting).decode('utf-8', errors='ignore')
-                    self.buffer += data
-                    self._process_buffer()
+                    print(data.strip())  # 控制台输出
+                    self.data_queue.put(data.strip())  # 直接存储所有数据
                 
-                time.sleep(0.1)  # 更灵敏的轮询间隔
+                time.sleep(0.1)  # 轮询间隔
 
         except KeyboardInterrupt:
             self.stop()
@@ -95,7 +75,7 @@ class SerialDataLogger:
             self.ser.close()
 
     def stop(self):
-        """安全停止服务"""
+        """安全停止程序"""
         self.running = False
         self.worker_thread.join()
         print("服务已安全停止")
