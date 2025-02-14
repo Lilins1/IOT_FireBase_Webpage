@@ -9,8 +9,7 @@ import re
 from google.cloud import pubsub_v1
 
 # Google Cloud 配置
-PROJECT_ID = "your-gcp-project-id"
-TOPIC_ID = "sensor-data-topic"
+
 
 class SerialDataLogger:
     def __init__(self):
@@ -49,30 +48,56 @@ class SerialDataLogger:
             if match:
                 extracted_data[key] = match.group(1)
 
+        extracted_data["TimeUnix"] = time.time()  # 当前 Unix 时间戳
+        extracted_data["TimeStamp"] = time.strftime("%H:%M:%S", time.localtime())  # 可读时间格式
+
         #return extracted_data if len(extracted_data) == len(patterns) else None
         return extracted_data if extracted_data else None
 
+
     def _save_worker(self):
         """后台存储工作线程"""
+
+        rawMessage = []  # 存储未完整解析的数据
         messages = []
+        last_save_time = time.time() 
         while self.running or not self.data_queue.empty():
             try:
                 # 获取数据（非阻塞）
-                message = self.data_queue.get(timeout=0.5)
-                parsed_data = self._extract_data(message)
-                
-                if parsed_data:
-                    messages.append(parsed_data)
+                new_data = self.data_queue.get(timeout=0.5)
+                rawMessage.append(new_data)
 
-                # 每10条数据保存一次or 10 sec
+                # 定义匹配模式
+                patterns = {
+                    "Packet": r"#\s+(\d+)",
+                    "END": r"mV"
+                }
+
+                # 处理完整的数据块（检查是否包含 "mV"）
+                combined_message = "".join(rawMessage)  # 组合所有数据
+                if re.search(patterns["END"], combined_message):
+                    # 分割数据，取 "mV" 之前的部分（包括 "mV"）
+                    message, remaining_data = combined_message.rsplit("mV", 1)
+                    message += "mV"  # 重新加上 "mV"
+
+                    # 解析数据
+                    parsed_data = self._extract_data(message)
+                    if parsed_data:
+                        messages.append(parsed_data)
+
+                    # 保留 "mV" 之后的部分，等待下一次循环处理
+                    rawMessage = [remaining_data.strip()] if remaining_data.strip() else []
+
+                # 每 10 条数据保存一次 或 每 10 秒保存一次
                 if len(messages) >= 10 or (time.time() - last_save_time) > 10:
                     self._save_to_file(messages)
                     messages = []
                     last_save_time = time.time()
-            except:
+
+            except Exception as e:
                 pass
 
-        # 保存剩余数据
+        # 退出循环后，保存剩余的数据
         if messages:
             self._save_to_file(messages)
 
@@ -121,7 +146,7 @@ class SerialDataLogger:
                     print(data.strip())  # 控制台输出
                     self.data_queue.put(data.strip())  # 直接存储所有数据
                 
-                time.sleep(5)  # 轮询间隔
+                time.sleep(0.2)  # 轮询间隔
 
         except KeyboardInterrupt:
             self.stop()

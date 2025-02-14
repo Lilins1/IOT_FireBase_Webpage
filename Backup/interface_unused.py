@@ -14,7 +14,7 @@ class SerialDataLogger:
             bytesize=serial.EIGHTBITS,
             parity=serial.PARITY_NONE,
             stopbits=serial.STOPBITS_ONE,
-            timeout= 0.1  # 更灵敏的超时设置
+            timeout= 5  # 更灵敏的超时设置
         )
         self.buffer = ''
         self.data_queue = Queue()
@@ -72,22 +72,26 @@ class SerialDataLogger:
         filename = os.path.join(save_path, 'data.txt')
         with open(filename, 'a', encoding='utf-8') as f:  # 改为追加模式
             f.write('\n'.join(messages) + '\n')
-        print(f"[{now}] 已保存{len(messages)}条数据到 {filename}")
+        print(f"[{now}] Save{len(messages)} message to {filename}")
 
     def run(self):
         """主运行循环"""
         self.worker_thread.start()
-        print("开始持续监听串口数据...")
+        print("Listening...")
         
         try:
             while self.running:
                 # 持续读取数据
                 if self.ser.in_waiting > 0:
                     data = self.ser.read(self.ser.in_waiting).decode('utf-8', errors='ignore')
+
+                    # **先打印所有收到的数据**
+                    #print(f"Raw Data:____________________________________{data}Raw END____________________________________")
+
                     self.buffer += data
                     self._process_buffer()
                 
-                time.sleep(0.1)  # 更灵敏的轮询间隔
+                time.sleep(0.2)  # 更灵敏的轮询间隔
 
         except KeyboardInterrupt:
             self.stop()
@@ -98,7 +102,7 @@ class SerialDataLogger:
         """安全停止服务"""
         self.running = False
         self.worker_thread.join()
-        print("服务已安全停止")
+        print("Stoped")
 
 if __name__ == "__main__":
     logger = SerialDataLogger()

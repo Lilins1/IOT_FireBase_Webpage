@@ -17,9 +17,9 @@ async function uploadFileToGoogleCloud() {
     await storage.bucket("iotsensor1").upload("Data/DataSet_test.TXT", {
       destination: destinationPath,
     });
-    console.log("文件上传成功！");
+    console.log("File uploaded sucess");
   } catch (error) {
-    console.error("上传失败:", error);
+    console.error("upload failed:", error);
   }
 }
 
@@ -36,9 +36,9 @@ async function downloadFileFromGoogleCloud(date) {
   try {
     // 下载文件
     await storage.bucket("iotsensor1").file(sourcePath).download({ destination: destinationPath });
-    console.log(`文件下载成功！保存为: ${destinationPath}`);
+    console.log(`Download Successfully! Save as:${destinationPath}`);
   } catch (error) {
-    console.error("下载失败:", error);
+    console.error("Download Failed:", error);
   }
 }
 

@@ -95,18 +95,18 @@
     <h1>IoT Sensor Dashboard</h1>
     
     <!-- 上传到 Google Cloud -->
-    <div class="card">
+    <!-- <div class="card">
       <input type="file" id="googleFileInput" accept=".txt">
-      <button onclick="uploadFileToGoogleCloud()">上传到 Google Cloud</button>
+      <button onclick="uploadFileToGoogleCloud()">Upload to Google Cloud</button>
       <div id="googleUploadStatus"></div>
-    </div>
+    </div> -->
 
     <!-- 本地文件读取 -->
-    <div class="card">
+    <!-- <div class="card">
       <input type="file" id="localFileInput" accept=".txt">
       <button onclick="readLocalFile()">ReadFile</button>
       <div id="localFileStatus"></div>
-    </div>
+    </div> -->
 
     <!-- 数据显示区 -->
     <div id="packetContainer" class="data-display">
@@ -131,17 +131,17 @@
       const fileInput = document.getElementById('localFileInput');
       const statusDiv = document.getElementById('localFileStatus');
       if (!fileInput.files[0]) {
-        statusDiv.innerHTML = '<div class="error">请先选择文件</div>';
+        statusDiv.innerHTML = '<div class="error">Please Choose Files</div>';
         return;
       }
       selectedFile = fileInput.files[0];
       const reader = new FileReader();
       reader.onload = function(e) {
         document.getElementById('packetContainer').textContent = e.target.result;
-        statusDiv.innerHTML = `<div class="success">已加载文件: ${selectedFile.name}</div>`;
+        statusDiv.innerHTML = `<div class="success">File LoadedLoaded: ${selectedFile.name}</div>`;
       };
       reader.onerror = function() {
-        statusDiv.innerHTML = '<div class="error">文件读取失败</div>';
+        statusDiv.innerHTML = '<div class="error">File Load Failed</div>';
       };
       reader.readAsText(selectedFile);
     }

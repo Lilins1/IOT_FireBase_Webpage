@@ -1,7 +1,7 @@
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 const bucketName = 'pub-sub-senso'
-const FixedName = 'DataInJson/'
+const fileName = 'DataInJson/'
 
 // 创建存储对象
 const storage = new Storage({ keyFilename: ".env/data-segment-450509-s6-cab3f8e582fc.json" });
@@ -12,7 +12,7 @@ async function uploadFileToGoogleCloud() {
   const folderName = currentDate.toISOString().split('T')[0];  // 'YYYY-MM-DD'
 
   // 构造目标文件路径，文件名可以自定义
-  const destinationPath = `${FixedName}${folderName}/DataSet_test.TXT`;
+  const destinationPath = `dataintxt/${folderName}/DataSet_test.TXT`;
 
   try {
     // 上传文件
@@ -32,7 +32,7 @@ async function downloadFileFromGoogleCloud(date) {
   const fileName = 'DataSet_test.TXT';  // 文件名
 
   // 构造目标文件路径
-  const sourcePath = `${FixedName}${folderName}/${fileName}`;
+  const sourcePath = `dataintxt/${folderName}/${fileName}`;
   const destinationPath = path.join(__dirname, `../Data/downloaded_${fileName}`);  // 下载到本地的文件名
 
   try {
@@ -45,8 +45,8 @@ async function downloadFileFromGoogleCloud(date) {
 }
 
 
-async function listFilesInDirectory(FixedName) {
-  const directoryPrefix = FixedName; // 你想要列出文件的“目录”前缀
+async function listFilesInDirectory() {
+  const directoryPrefix = 'DataInJson/'; // 你想要列出文件的“目录”前缀
 
   try {
     const [files] = await storage.bucket(bucketName).getFiles({
@@ -64,9 +64,9 @@ async function listFilesInDirectory(FixedName) {
 
 
 
-// uploadFileToGoogleCloud();
+uploadFileToGoogleCloud();
 
-listFilesInDirectory(FixedName);
+listFilesInDirectory();
 
-// downloadFileFromGoogleCloud();  // '2025-02-13'
+downloadFileFromGoogleCloud();  // '2025-02-13'
 
