@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,195 +6,170 @@
   <title>IoT Data Monitor</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    :root {
-      --primary-color: #2c3e50;
-      --secondary-color: #3498db;
-      --background-color: #f5f6fa;
-      --card-bg: #ffffff;
-      --shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--background-color);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 900px;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    
-    h1 {
-      color: var(--primary-color);
-      text-align: center;
-    }
-    
-    .card {
-      width: 100%;
-      background: var(--card-bg);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      padding: 20px;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    
-    button {
-      padding: 10px 20px;
-      background: var(--secondary-color);
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    
-    button:hover {
-      background: #2980b9;
-    }
-    
-    .data-display {
-      text-align: left;
-      white-space: pre-wrap;
-      font-family: Consolas, "Courier New", monospace;
-      background: var(--card-bg);
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      width: 100%;
-    }
-    
-    .success {
-      color: #2ecc71;
-      padding: 10px;
-      background: #d4edda;
-      border-radius: 5px;
-      margin-top: 10px;
-    }
-    
-    .error {
-      color: #e74c3c;
-      padding: 10px;
-      background: #f8d7da;
-      border-radius: 5px;
-      margin-top: 10px;
-    }
+    /* Keep existing styles, modify text values to English */
+    .error-message { color: #e74c3c; }
+    .success-message { color: #2ecc71; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>IoT Sensor Dashboard</h1>
     
-    <!-- 上传到 Google Cloud -->
-    <!-- <div class="card">
-      <input type="file" id="googleFileInput" accept=".txt">
-      <button onclick="uploadFileToGoogleCloud()">Upload to Google Cloud</button>
-      <div id="googleUploadStatus"></div>
-    </div> -->
-
-    <!-- 本地文件读取 -->
-    <!-- <div class="card">
-      <input type="file" id="localFileInput" accept=".txt">
-      <button onclick="readLocalFile()">ReadFile</button>
-      <div id="localFileStatus"></div>
-    </div> -->
-
-    <!-- 数据显示区 -->
-    <div id="packetContainer" class="data-display">
-      <!-- 文件内容将在这里显示 -->
+    <!-- Date Selection Card -->
+    <div class="card">
+      <h2>Historical Data</h2>
+      <div class="filter-group">
+        <input type="date" id="datePicker">
+        <select id="hourFilter" disabled>
+          <option value="all">All Hours</option>
+        </select>
+      </div>
+      <div id="fileList" class="three-column-grid"></div>
+    </div>
+    <!-- Historical Data Display -->
+    <div class="card">
+      <h2>Selected Data</h2>
+      <div id="dataDisplay" class="data-display"></div>
     </div>
 
-    <div class=".card">
-      <!-- 文件内容将在这里显示 -->
-       Real time data
+    <!-- Data Display Area -->
+    <div class="card">
+      <h2>Real-time Data</h2>
+      <div id="realtimeData" class="data-display"></div>
     </div>
 
-    <div id="packetContainer2" class="data-display">
-      <!-- 文件内容将在这里显示 -->
-    </div>
+    
   </div>
 
-
   <script>
-    let selectedFile = null;
-
-    function readLocalFile() {
-      const fileInput = document.getElementById('localFileInput');
-      const statusDiv = document.getElementById('localFileStatus');
-      if (!fileInput.files[0]) {
-        statusDiv.innerHTML = '<div class="error">Please Choose Files</div>';
-        return;
+    // Date Picker Handler
+    document.getElementById('datePicker').addEventListener('change', async (e) => {
+      const date = e.target.value;
+      try {
+        const response = await fetch(`http://localhost:3000/api/files?date=${date}`);
+        const files = await response.json();
+        renderFiles(files);
+      } catch (error) {
+        showError('Failed to load files: ' + error.message);
       }
-      selectedFile = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('packetContainer').textContent = e.target.result;
-        statusDiv.innerHTML = `<div class="success">File LoadedLoaded: ${selectedFile.name}</div>`;
-      };
-      reader.onerror = function() {
-        statusDiv.innerHTML = '<div class="error">File Load Failed</div>';
-      };
-      reader.readAsText(selectedFile);
+    });
+
+    // Render file list
+    // 修改后的renderFiles函数
+    function renderFiles(files) {
+      const container = document.getElementById('fileList');
+      const hourFilter = document.getElementById('hourFilter');
+      
+      // 提取小时信息（假设文件名为HHMM格式）
+      const hourSet = new Set();
+      files.forEach(file => {
+        const filename = file.name.replace(/\..+$/, ''); // 移除扩展名
+        if(filename.match(/^\d{4}$/)) {
+          hourSet.add(filename.substring(0, 2));
+        }
+      });
+      
+      // 生成小时筛选选项
+      const hours = Array.from(hourSet).sort();
+      hourFilter.innerHTML = '<option value="all">All Hours</option>' + 
+        hours.map(h => `<option value="${h}">${h}:00 - ${h}:59</option>`).join('');
+      hourFilter.disabled = false;
+
+      // 初始显示
+      updateFileDisplay(files, hourFilter.value);
+
+      // 添加筛选事件
+      hourFilter.addEventListener('change', () => {
+        updateFileDisplay(files, hourFilter.value);
+      });
     }
 
-    // function startAutoRead() {
-    //   setInterval(() => {
-    //     if (selectedFile) {
-    //       const reader = new FileReader();
-    //       reader.onload = function(e) {
-    //         document.getElementById('packetContainer').textContent = e.target.result;
-    //       };
-    //       reader.readAsText(selectedFile);
-    //     }
-    //   }, 3000);
-    // }
+    // 更新文件显示函数
+    function updateFileDisplay(files, selectedHour) {
+      const container = document.getElementById('fileList');
+      const filteredFiles = selectedHour === 'all' 
+        ? files 
+        : files.filter(file => {
+            const filename = file.name.replace(/\..+$/, '');
+            return filename.startsWith(selectedHour);
+          });
 
-    document.getElementById('localFileInput').addEventListener('change', () => {
-      readLocalFile();
-      // startAutoRead();
-    });
-  </script>
+      container.innerHTML = filteredFiles.length ? '' : '<div class="error-message">No files found</div>';
+      
+      // 分三列显示
+      const columns = [[], [], []];
+      filteredFiles.forEach((file, index) => {
+        columns[index % 3].push(file);
+      });
 
-  <script>
-    function fetchAndDisplayData() {
-      fetch('DataSet_real_time.TXT')
-        .then(response => {
-          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-          return response.text();
-        })
-        .then(text => {
-          document.getElementById('packetContainer2').innerText = text;
-        })
-        .catch(error => {
-          console.error('Fetch Error:', error);
-          document.getElementById('packetContainer2').innerHTML = `
-            <div class="error">
-              Failed to load data: ${error.message}<br>
-              Please check that:<br>
-              1. The server is running from the correct directory.<br>
-              2. The file \"Data/DataSet_test.TXT\" exists in the correct location.<br>
-              3. File name case sensitivity.
-            </div>
-          `;
+      columns.forEach(colFiles => {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'file-column';
+        colFiles.forEach(file => {
+          const link = document.createElement('a');
+          link.href = '#';
+          const time = file.name.replace(/\..+$/, '');
+          link.textContent = `${time.substring(0,2)}:${time.substring(2)}`;
+          link.onclick = () => loadFileData(file.path);
+          colDiv.appendChild(link);
         });
+        container.appendChild(colDiv);
+      });
+    }
+
+    // Load and display file data
+    async function loadFileData(filePath) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/file?path=${encodeURIComponent(filePath)}`);
+        const data = await response.json();
+        renderDataTable(data);
+      } catch (error) {
+        showError('Failed to load data: ' + error.message);
+      }
+    }
+
+    // Render data table
+    function renderDataTable(data) {
+      const container = document.getElementById('dataDisplay');
+      const headers = Object.keys(data[0]);
+      
+      const tableHTML = `
+        <table>
+          <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${data.map(row => `
+              <tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      
+      container.innerHTML = tableHTML;
+    }
+
+    // Error handling
+    function showError(message) {
+      const container = document.getElementById('fileList');
+      container.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+
+    // Real-time data updates
+    // 修改实时数据显示保留换行
+    async function updateRealTimeData() {
+      try {
+        const response = await fetch('DataSet_real_time.TXT');
+        const data = await response.text();
+        document.getElementById('realtimeData').innerHTML = data.replace(/\n/g, '<br>');
+      } catch (error) {
+        console.error('Error fetching realtime data:', error);
+      }
     }
     
+    // Initial load
     document.addEventListener('DOMContentLoaded', () => {
-      fetchAndDisplayData();
-      setInterval(fetchAndDisplayData, 20000);
+      updateRealTimeData();
+      setInterval(updateRealTimeData, 10000);
     });
   </script>
-
-
-  <script src="app.js"></script>
-  <script src="Google_upload.js"></script>
 </body>
 </html>

@@ -52,8 +52,10 @@ class SerialDataLogger:
             if match:
                 extracted_data[key] = match.group(1)
 
-        extracted_data["TimeUnix"] = time.time()  # 当前 Unix 时间戳
+        
         extracted_data["TimeStamp"] = time.strftime("%H:%M:%S", time.localtime())  # 可读时间格式
+        extracted_data["TimeUnix"] = time.time()  # 当前 Unix 时间戳
+        
 
         #return extracted_data if len(extracted_data) == len(patterns) else None
         return extracted_data if extracted_data else None
