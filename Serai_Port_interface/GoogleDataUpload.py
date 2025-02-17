@@ -31,22 +31,29 @@ class SerialDataLogger:
 
 
     def _extract_data(self, message):
+        print(repr(message))
         message = message.replace("\n", " ").replace("\r", " ")
+        message = re.sub(r"\s+", " ", message).strip()
+
+        print(repr(message))
         """Extracting Data"""
         patterns = {
-            "Packet": r"#\s+(\d+)",
-            "Node": r"Node\s+(\d+)",
-            "TX ID": r"TX ID\s+([-\w]+)",
-            "Temp": r"Temp\s+([\d.]+)\s*F",
-            "Light": r"Light\s+([\d.]+)\s*lx",
-            "Time": r"Time\s+([\d:]+)",
-            "dT": r"dT\s+([\d:]+)",
-            "RSSI": r"RSSI\s+([-\d.]+|---)mW",
-            "Humidity": r"Humidity\s+([\d.]+)\s*%",
-            "Extrnl": r"Extrnl\s+([\d.]+)\s*mV"
+            "Packet": r"#\s*(\d+)\s*\|",
+            "Node": r"Node\s*(\d+)\s*\|",
+            # "TX ID": r"TX ID\s+([-\w]+)",
+            "Temp": r"Temp\s*([\d.]+)\s*F\s*\|",
+            "Light": r"Light\s*([\d.]+)\s*lx",
+            # "Time": r"Time\s+([\d:]+)",
+            "dT": r"dT\s*([\d:]+)\s*\|",
+            "RSSI": r"RSSI\s*([-\d.]+|---)mW\s*\|",
+            "Humidity": r"Humidity\s*([\d.]+)\s*%\s*\|",
+            "Extrnl": r"Extrnl\s*([\d.]+)\s*mV"
         }
 
         extracted_data = {}
+        # 初始化所有字段为 'Unreceived'
+        extracted_data = {key: '---' for key in patterns.keys()}  # 修复1：直接遍历键
+
         for key, pattern in patterns.items():
             match = re.search(pattern, message)
             if match:
@@ -57,8 +64,9 @@ class SerialDataLogger:
         extracted_data["TimeUnix"] = time.time()  # 当前 Unix 时间戳
         
 
-        #return extracted_data if len(extracted_data) == len(patterns) else None
-        return extracted_data if extracted_data else None
+        # return extracted_data if len(extracted_data) == len(patterns) else None
+        # return extracted_data if extracted_data else None
+        return extracted_data
 
 
     def _save_worker(self):

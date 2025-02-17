@@ -1,3 +1,13 @@
- npm run start_src
+Web
+npm run start_src
  
- node src/Google_upload.js
+Server
+node src/Google_upload.js
+
+
+ubuntu
+cd /home/orangepi/IOT_Pro
+python3 GoogleDataUpload.py
+
+Computer
+python Serai_Port_interface\GoogleDataUpload.py

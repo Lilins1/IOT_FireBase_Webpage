@@ -34,7 +34,7 @@
 
     <!-- Data Display Area -->
     <div class="card">
-      <h2>Real-time Data</h2>
+      <h2>Offline Data</h2>
       <div id="realtimeData" class="data-display"></div>
     </div>
 
@@ -97,9 +97,9 @@
       container.innerHTML = filteredFiles.length ? '' : '<div class="error-message">No files found</div>';
       
       // 分三列显示
-      const columns = [[], [], []];
+      const columns = [[], [], [], [], []];
       filteredFiles.forEach((file, index) => {
-        columns[index % 3].push(file);
+        columns[index % 5].push(file);
       });
 
       columns.forEach(colFiles => {
