@@ -6,42 +6,7 @@
   <title>IoT Data Monitor</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    /* 保持现有样式，并将文字修改为英文 */
-    .error-message { color: #e74c3c; }
-    .success-message { color: #2ecc71; }
-    .charts-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
     
-    .chart-wrapper {
-      height: 300px;
-      position: relative;
-    }
-    /*  */
-    .charts-container {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-    /* .charts-container {
-      display: grid;
-      gap: 2rem;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    } */
-
-    .chart-wrapper {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 300px !important;
-    }
   </style>
 </head>
 <body>
@@ -299,9 +264,9 @@
       container.innerHTML = filteredFiles.length ? '' : '<div class="error-message">No files found</div>';
       
       // 按五列显示
-      const columns = [[], [], [], [], []];
+      const columns = [[], [], [], [],[], [], [], [], [], []];
       filteredFiles.forEach((file, index) => {
-        columns[index % 5].push(file);
+        columns[index % 10].push(file);
       });
 
       columns.forEach(colFiles => {
