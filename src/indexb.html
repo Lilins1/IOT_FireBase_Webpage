@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Data Monitor</title>
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/+esm"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/+esm"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm"></script>
+
+  <style>
+    /* Keep existing styles, modify text values to English */
+    .error-message { color: #e74c3c; }
+    .success-message { color: #2ecc71; }
+    .charts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .chart-wrapper {
+      height: 300px;
+      position: relative;
+    }
+    /*  */
+    .charts-container {
+      display: grid;
+      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    }
+
+    .chart-wrapper {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>IoT Sensor Dashboard</h1>
+    
+    <!-- Date Selection Card -->
+    <div class="card">
+      <h2>Historical Data</h2>
+      <div class="filter-group">
+        <input type="date" id="datePicker">
+        <select id="hourFilter" disabled>
+          <option value="all">All Hours</option>
+        </select>
+      </div>
+      <div id="fileList" class="three-column-grid"></div>
+    </div>
+    <!-- Historical Data Display -->
+    <div class="card">
+      <h2>Selected Data</h2>
+      <div id="dataDisplay" class="data-display"></div>
+    </div>
+
+    <!-- Data Display Area -->
+    <div class="card">
+      <h2>Offline Data</h2>
+      <div id="realtimeData" class="data-display"></div>
+    </div>
+
+    <!-- Sensor Graph -->
+    <div class="card">
+      <h2>Sensor Data Charts</h2>
+      <div class="charts-container">
+        <div class="chart-wrapper">
+          <canvas id="tempChart"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="humidityChart"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="lightChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    
+  </div>
+
+    
+  <script type="module">
+    // import { Chart } from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm'
+    import { Chart, TimeSeriesScale, LineController, LineElement, PointElement, LinearScale, Title, Tooltip, Legend } 
+    from 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/+esm';
+    import { TimeScale } from 'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/+esm';
+    import * as dateFns from 'https://cdn.jsdelivr.net/npm/date-fns@2.29.3/+esm'
+
+    Chart.register(TimeScale, LineController, LineElement, PointElement, LinearScale, Title, Tooltip, Legend);
+
+    // 注册日期适配器
+    Chart.register({
+        id: 'date-fns-adapter',
+        adapter: dateFns
+    });
+    
+      // 添加全局图表实例
+      let tempChart, humidityChart, lightChart;
+
+      // 修改后的hourFilter事件监听
+      document.getElementById('hourFilter').addEventListener('change', async function() {
+        const date = document.getElementById('datePicker').value;
+        const hour = this.value;
+        
+        if ((date && hour !== 'all')) {
+          try {
+            // 使用新接口获取数据
+            console.log(`http://localhost:3000/api/hour-data?date=${date}&hour=${hour.padStart(2, '0')}`);
+            const response = await fetch(
+              `http://localhost:3000/api/hour-data?date=${date}&hour=${hour.padStart(2, '0')}`
+            );
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.dataCount === 0) {
+              showError('No data available for selected hour');
+              return;
+            }
+            
+            // 直接使用预处理后的数据
+            updateCharts(result.data);
+            
+          } catch (error) {
+            showError('Failed to load chart data: ' + error.message);
+            console.error('Error details:', error);
+          }
+        }
+        else
+        {
+          console.log('Error unexcute 148');
+        }
+      });
+
+      // 优化后的图表更新函数
+      function updateCharts(data) {
+        // 数据已由后端预处理，直接使用
+        const sortedData = data.sort((a, b) => a.TimeUnix - b.TimeUnix);
+
+        // 销毁旧图表（增加容错处理）
+        [tempChart, humidityChart, lightChart].forEach(chart => {
+          if (chart && typeof chart.destroy === 'function') {
+            chart.destroy();
+          }
+        });
+
+        // 温度图表
+        tempChart = createChart(
+          'tempChart',
+          'Temperature (°F)',
+          sortedData.map(d => d.Temp),
+          'rgb(255, 99, 132)',
+          sortedData.map(d => d.TimeUnix)
+        );
+
+        // 湿度图表
+        humidityChart = createChart(
+          'humidityChart',
+          'Humidity (%)',
+          sortedData.map(d => d.Humidity),
+          'rgb(54, 162, 235)',
+          sortedData.map(d => d.TimeUnix)
+        );
+
+        // 亮度图表
+        lightChart = createChart(
+          'lightChart',
+          'Light Intensity',
+          sortedData.map(d => d.Light),
+          'rgb(255, 206, 86)',
+          sortedData.map(d => d.TimeUnix)
+        );
+      }
+
+      // // 在创建图表前添加适配器注册
+      // Chart.register({
+      //   id: 'date-fns-adapter',
+      //   adapter: dateFns
+      // });
+
+      // 增强的图表创建函数
+      function createChart(canvasId, label, data, borderColor, timestamps) {
+        return new Chart(document.getElementById(canvasId), {
+          type: 'line',
+          data: {
+            datasets: [{
+              label: label,
+              data: timestamps.map((t, i) => ({
+                x: new Date(t * 1000), // 转换Unix时间戳
+                y: data[i]
+              })),
+              borderColor: borderColor,
+              borderWidth: 2,
+              pointRadius: 3,
+              tension: 0.2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                type: 'time',
+                time: {
+                  tooltipFormat: 'HH:mm:ss',
+                  unit: 'minute',
+                  displayFormats: {
+                    minute: 'HH:mm'
+                  }
+                },
+                title: {
+                  display: true,
+                  text: 'Time'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: label
+                },
+                grace: '5%' // 自动留出5%的空白
+              }
+            },
+            plugins: {
+              legend: {
+                position: 'top'
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                  title: (items) => {
+                    const date = new Date(items[0].parsed.x);
+                    return date.toLocaleTimeString();
+                  },
+                  label: (context) => {
+                    return `${label}: ${context.parsed.y.toFixed(2)}`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      function showError(message) {
+        const container = document.getElementById('dataDisplay');
+        container.innerHTML = `<div class="error-message">${message}</div>`;
+      }
+  </script>
+  <script>
+    // Date Picker Handler
+    document.getElementById('datePicker').addEventListener('change', async (e) => {
+      const date = e.target.value;
+      try {
+        const response = await fetch(`http://localhost:3000/api/files?date=${date}`);
+        const files = await response.json();
+        renderFiles(files);
+      } catch (error) {
+        showError('Failed to load files: ' + error.message);
+      }
+    });
+
+    // Render file list
+    // 修改后的renderFiles函数
+    function renderFiles(files) {
+      const container = document.getElementById('fileList');
+      const hourFilter = document.getElementById('hourFilter');
+      
+      // 提取小时信息（假设文件名为HHMM格式）
+      const hourSet = new Set();
+      files.forEach(file => {
+        const filename = file.name.replace(/\..+$/, ''); // 移除扩展名
+        if(filename.match(/^\d{4}$/)) {
+          hourSet.add(filename.substring(0, 2));
+        }
+      });
+      
+      // 生成小时筛选选项
+      const hours = Array.from(hourSet).sort();
+      hourFilter.innerHTML = '<option value="all">All Hours</option>' + 
+        hours.map(h => `<option value="${h}">${h}:00 - ${h}:59</option>`).join('');
+      hourFilter.disabled = false;
+
+      // 初始显示
+      updateFileDisplay(files, hourFilter.value);
+
+      // 添加筛选事件
+      hourFilter.addEventListener('change', () => {
+        updateFileDisplay(files, hourFilter.value);
+      });
+    }
+
+    // 更新文件显示函数
+    function updateFileDisplay(files, selectedHour) {
+      const container = document.getElementById('fileList');
+      const filteredFiles = selectedHour === 'all' 
+        ? files 
+        : files.filter(file => {
+            const filename = file.name.replace(/\..+$/, '');
+            return filename.startsWith(selectedHour);
+          });
+
+      container.innerHTML = filteredFiles.length ? '' : '<div class="error-message">No files found</div>';
+      
+      // 分三列显示
+      const columns = [[], [], [], [], []];
+      filteredFiles.forEach((file, index) => {
+        columns[index % 5].push(file);
+      });
+
+      columns.forEach(colFiles => {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'file-column';
+        colFiles.forEach(file => {
+          const link = document.createElement('a');
+          link.href = '#';
+          const time = file.name.replace(/\..+$/, '');
+          link.textContent = `${time.substring(0,2)}:${time.substring(2)}`;
+          link.onclick = () => loadFileData(file.path);
+          colDiv.appendChild(link);
+        });
+        container.appendChild(colDiv);
+      });
+    }
+
+    // Load and display file data
+    async function loadFileData(filePath) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/file?path=${encodeURIComponent(filePath)}`);
+        const data = await response.json();
+        renderDataTable(data);
+      } catch (error) {
+        showError('Failed to load data: ' + error.message);
+      }
+    }
+
+    // Render data table
+    function renderDataTable(data) {
+      const container = document.getElementById('dataDisplay');
+      const headers = Object.keys(data[0]);
+      
+      const tableHTML = `
+        <table>
+          <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${data.map(row => `
+              <tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      
+      container.innerHTML = tableHTML;
+    }
+
+    // Error handling
+    function showError(message) {
+      const container = document.getElementById('fileList');
+      container.innerHTML = `<div class="error-message">${message}</div>`;
+    }
+
+    // Real-time data updates
+    // 修改实时数据显示保留换行
+    async function updateRealTimeData() {
+      try {
+        const response = await fetch('DataSet_real_time.TXT');
+        const data = await response.text();
+        document.getElementById('realtimeData').innerHTML = data.replace(/\n/g, '<br>');
+      } catch (error) {
+        console.error('Error fetching realtime data:', error);
+      }
+    }
+    
+    // Initial load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateRealTimeData();
+      setInterval(updateRealTimeData, 10000);
+    });
+
+  </script>
+</body>
+</html>
